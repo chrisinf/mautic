@@ -137,7 +137,7 @@ class EmailSubscriber extends CommonSubscriber
     public function onEmailSend(Events\EmailSendEvent $event)
     {
         $helper = $event->getHelper();
-        if ($helper && $unsubscribeEmail = $helper->generateUnsubscribeEmail()) {
+        if (false && $helper && $unsubscribeEmail = $helper->generateUnsubscribeEmail()) {
             $headers          = $event->getTextHeaders();
             $existing         = (isset($headers['List-Unsubscribe'])) ? $headers['List-Unsubscribe'] : '';
             $unsubscribeEmail = "<mailto:$unsubscribeEmail>";

@@ -352,7 +352,7 @@ class MailHelper
         if (empty($this->fatal)) {
             if (!$isQueueFlush) {
                 // Only add unsubscribe header to one-off sends as tokenized sends are built by the transport
-                $this->addUnsubscribeHeader();
+                //$this->addUnsubscribeHeader();
 
                 // Search/replace tokens if this is not a queue flush
 
@@ -379,6 +379,16 @@ class MailHelper
                 if ($ownerSignature) {
                     $tokens['{signature}'] = $ownerSignature;
                 }
+
+				$from = $this->message->getFrom();
+				if (empty($from)) $from = $this->from;
+
+	            $tokens['{fromemail}'] = array_pop(array_keys($from));
+				$tokens['{fromname}'] = array_pop(array_values($from));
+				$tokens['{fromfirstname}'] = array_shift(explode(' ', $tokens['{fromname}']));
+				$tokens['{fromlastname}'] = array_pop(explode(' ', $tokens['{fromname}']));
+
+				error_log("tokens: " . print_r($tokens,1));
 
                 // Set metadata if applicable
                 if (method_exists($this->message, 'addMetadata')) {
