@@ -273,6 +273,26 @@ class MailHelper
         }
 
         $this->message = $this->getMessageInstance();
+
+
+        // Generate Thread-Index
+        // 22 bytes
+        // - first 3 are similar to random seed (?)
+        // - next 19 bytes are random (?)
+        $seed = sprintf('%08X', mt_rand(0, 1024*1024*1024*1024-1));
+
+        $threadIndex = $seed . openssl_random_pseudo_bytes(19);
+
+        $this->addCustomHeader('Thread-Index', $threadIndex);
+
+        // Generate Boundary based on Thread-Index
+        // ----=_NextPart_000_02A1_01D30C9E.FBA46F20
+
+        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', time() % 1024*1024*1024*1024);
+
+        $this->message->setBoundary($boundary);
+
+
     }
 
     /**
