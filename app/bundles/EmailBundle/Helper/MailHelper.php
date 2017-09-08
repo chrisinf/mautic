@@ -281,7 +281,7 @@ class MailHelper
         // - next 19 bytes are random (?)
         $seed = sprintf('%08X', mt_rand(0, 1024*1024*1024*1024-1));
 
-        $threadIndex = $seed . openssl_random_pseudo_bytes(19);
+        $threadIndex = pack('H*', substr($seed, 0, 6)) . openssl_random_pseudo_bytes(19);
 
         $this->addCustomHeader('Thread-Index', $threadIndex);
 
