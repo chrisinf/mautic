@@ -21,5 +21,6 @@ return [
 
     'parameters' => [
         'update_stability'          => 'stable',
+        'update_checkupdates_url'   => 'https://updates.mautic.org/index.php?option=com_mauticdownload&task=checkUpdates',
     ],
 ];
