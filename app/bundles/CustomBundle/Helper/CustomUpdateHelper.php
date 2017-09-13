@@ -1,7 +1,7 @@
 <?php
 
 /*
- * @copyright   2014 Mautic Contributors. All rights reserved
+ * @copyright   2017 Mautic Contributors. All rights reserved
  * @author      Mautic
  *
  * @link        http://mautic.org
@@ -13,11 +13,12 @@ namespace Mautic\CustomBundle\Helper;
 
 use Joomla\Http\HttpFactory;
 use Mautic\CoreBundle\Factory\MauticFactory;
+use Mautic\CoreBundle\Helper\UpdateHelper;
 
 /**
  * Helper class for fetching update data.
  */
-class CustomUpdateHelper
+class CustomUpdateHelper extends UpdateHelper
 {
     /**
      * @var \Joomla\Http\Http
@@ -115,7 +116,9 @@ class CustomUpdateHelper
                 ]
             );
 
-            $data   = $this->connector->post($this->factory->getParameter('update_checkupdates_url'), $appData, [], 10);
+            $updateUrl = $this->factory->getParameter('update_checkupdates_url');
+            error_log("UPDATE URL IS $updateUrl");
+            $data   = $this->connector->post($updateUrl, $appData, [], 10);
             $update = json_decode($data->body);
         } catch (\Exception $exception) {
             // Log the error
