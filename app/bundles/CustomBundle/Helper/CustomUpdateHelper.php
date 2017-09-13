@@ -117,7 +117,6 @@ class CustomUpdateHelper extends UpdateHelper
             );
 
             $updateUrl = $this->factory->getParameter('update_checkupdates_url');
-            error_log("UPDATE URL IS $updateUrl");
             $data   = $this->connector->post($updateUrl, $appData, [], 10);
             $update = json_decode($data->body);
         } catch (\Exception $exception) {
