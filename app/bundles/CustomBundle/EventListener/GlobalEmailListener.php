@@ -28,6 +28,24 @@ class GlobalEmailListener implements Swift_Events_SendListener
     {
         $this->logger->info('beforeSendPerformed triggered', [ 'event' => $evt ]);
         // check for limits
+
+        $transport = $evt->getTransport();
+        $message = $evt->getMessage();
+
+        if ($transport instanceof \Swift_Transport_EsmtpTransport) {
+            $clientLocalDomain = preg_replace('/[\/=+]/', '', base64_encode(sha1(key($message->getFrom()))));
+
+            $localDomain = "LT";
+
+            if (strlen($clientLocalDomain) > 6) {
+                $localDomain = "DESKTOP-" . substr(strtoupper($clientLocalDomain));
+            }
+
+            $transport->setLocalDomain($localDomain, 0, 7);
+
+        } else {
+            $this->logger->info("transport is instance of " . get_class($transport));
+        }
     }
 
     /**

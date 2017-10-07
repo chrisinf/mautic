@@ -274,7 +274,6 @@ class MailHelper
 
         $this->message = $this->getMessageInstance();
 
-
         // Generate Thread-Index
         // 22 bytes
         // - first 3 are similar to random seed (?)
@@ -291,8 +290,6 @@ class MailHelper
         $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', time() % 1024*1024*1024*1024);
 
         $this->message->setBoundary($boundary);
-
-
     }
 
     /**
@@ -414,8 +411,6 @@ class MailHelper
 				$tokens['{fromname}'] = array_pop(array_values($from));
 				$tokens['{fromfirstname}'] = array_shift(explode(' ', $tokens['{fromname}']));
 				$tokens['{fromlastname}'] = array_pop(explode(' ', $tokens['{fromname}']));
-
-				error_log("tokens: " . print_r($tokens,1));
 
                 // Set metadata if applicable
                 if (method_exists($this->message, 'addMetadata')) {
