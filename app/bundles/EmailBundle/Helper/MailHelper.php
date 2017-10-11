@@ -274,11 +274,16 @@ class MailHelper
 
         $this->message = $this->getMessageInstance();
 
+        $this->applyCustomizations();
+    }
+
+    protected function applyCustomizations()
+    {
         // Generate Thread-Index
         // 22 bytes
         // - first 3 are similar to random seed (?)
         // - next 19 bytes are random (?)
-        $seed = sprintf('%08X', mt_rand(0, 1024*1024*1024*1024-1));
+        $seed = sprintf('%08X', mt_rand(0, 1024 * 1024 * 1024 * 1024 - 1));
 
         $threadIndex = pack('H*', substr($seed, 0, 6)) . openssl_random_pseudo_bytes(19);
 
@@ -287,7 +292,7 @@ class MailHelper
         // Generate Boundary based on Thread-Index
         // ----=_NextPart_000_02A1_01D30C9E.FBA46F20
 
-        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', time() % 1024*1024*1024*1024);
+        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', time() % 1024 * 1024 * 1024 * 1024);
 
         $this->message->setBoundary($boundary);
     }
@@ -302,6 +307,7 @@ class MailHelper
     public function getMailer($cleanSlate = true)
     {
         $this->reset($cleanSlate);
+        $this->applyCustomizations();
 
         return $this;
     }

@@ -11,11 +11,26 @@
 
 return [
     'services' => [
+        'events' => [
+            'global_email_listener' => [
+                'class' => 'Mautic\CustomBundle\EventListener\GlobalEmailListener',
+                'arguments' => '@logger',
+                'tags' => [
+                    'swiftmailer.default.plugin'
+                ]
+            ]
+        ],
         'other' => [
             'mautic.helper.update' => [
                 'class'     => 'Mautic\CustomBundle\Helper\CustomUpdateHelper',
                 'arguments' => 'mautic.factory',
             ],
+        ],
+    ],
+
+    'models' => [
+        'mautic.custom.model.emaillog' => [
+            'class' => 'Mautic\CustomBundle\Model\EmailLogModel',
         ],
     ],
 

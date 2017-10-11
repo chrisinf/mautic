@@ -11,7 +11,6 @@
 
 namespace Mautic\CustomBundle\DependencyInjection\Compiler;
 
-use Mautic\CustomBundle\EventListener\GlobalEmailListener;
 use Mautic\CustomBundle\Helper\CustomUpdateHelper;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -22,9 +21,5 @@ class OverrideServiceCompilerPass implements CompilerPassInterface
     {
         $definition = $container->getDefinition('mautic.helper.update');
         $definition->setClass(CustomUpdateHelper::class);
-
-        $container->register("global_email_listener", GlobalEmailListener::class)
-            ->addArgument("@logger")
-            ->addTag( "swiftmailer.default.plugin");
     }
 }

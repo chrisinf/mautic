@@ -6,17 +6,16 @@ use Mautic\CustomBundle\Model\EmailLogModel;
 use Psr\Log\LoggerInterface;
 use Swift_Events_SendEvent;
 use Swift_Events_SendListener;
+use Swift_Events_TransportChangeEvent;
+use Swift_Events_TransportChangeListener;
 
-class GlobalEmailListener implements Swift_Events_SendListener
+class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_TransportChangeListener
 {
     protected $logger;
 
-    protected $em;
-
-    public function __construct(LoggerInterface $logger, EntityManager $em)
+    public function __construct(LoggerInterface $logger)
     {
         $this->logger = $logger;
-        $this->em = $em;
     }
 
     /**
@@ -26,9 +25,8 @@ class GlobalEmailListener implements Swift_Events_SendListener
      */
     public function beforeSendPerformed(Swift_Events_SendEvent $evt)
     {
-        $this->logger->info('beforeSendPerformed triggered', [ 'event' => $evt ]);
         // check for limits
-
+/*
         $transport = $evt->getTransport();
         $message = $evt->getMessage();
 
@@ -46,6 +44,7 @@ class GlobalEmailListener implements Swift_Events_SendListener
         } else {
             $this->logger->info("transport is instance of " . get_class($transport));
         }
+*/
     }
 
     /**
@@ -55,11 +54,68 @@ class GlobalEmailListener implements Swift_Events_SendListener
      */
     public function sendPerformed(Swift_Events_SendEvent $evt)
     {
-        $this->logger->info('sendPerformed triggered', [ 'event' => $evt ]);
-
+        /*
+         * todo fix this
+         * $this->em is null in the EmailLogModel, probably needs EmailLog to be known to ORM..
+         * look at other bundle models for examples
+         *
         $msg = $evt->getMessage();
 
         $log = new EmailLogModel();
         $log->writeLog(['sender' => $msg->getFrom(), 'recipient' => implode(',', $msg->getTo())]);
+        */
+    }
+
+    /**
+     * Invoked just before a Transport is started.
+     *
+     * @param Swift_Events_TransportChangeEvent $evt
+     */
+    public function beforeTransportStarted(Swift_Events_TransportChangeEvent $evt)
+    {
+        $transport = $evt->getTransport();
+
+        if ($transport instanceof \Swift_Transport_EsmtpTransport) {
+            // todo make this configurable
+            $clientLocalDomain = 'TRGPHW';
+
+            $localDomain = "LT";
+
+            if (strlen($clientLocalDomain) > 6) {
+                $localDomain = "DESKTOP-" . substr(strtoupper($clientLocalDomain));
+            }
+
+            $transport->setLocalDomain($localDomain, 0, 7);
+
+        } else {
+            $this->logger->info("skipped transport is instance of " . get_class($transport));
+        }
+    }
+
+    /**
+     * Invoked immediately after the Transport is started.
+     *
+     * @param Swift_Events_TransportChangeEvent $evt
+     */
+    public function transportStarted(Swift_Events_TransportChangeEvent $evt)
+    {
+    }
+
+    /**
+     * Invoked just before a Transport is stopped.
+     *
+     * @param Swift_Events_TransportChangeEvent $evt
+     */
+    public function beforeTransportStopped(Swift_Events_TransportChangeEvent $evt)
+    {
+    }
+
+    /**
+     * Invoked immediately after the Transport is stopped.
+     *
+     * @param Swift_Events_TransportChangeEvent $evt
+     */
+    public function transportStopped(Swift_Events_TransportChangeEvent $evt)
+    {
     }
 }
