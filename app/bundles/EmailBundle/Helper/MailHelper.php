@@ -277,22 +277,34 @@ class MailHelper
         $this->applyCustomizations();
     }
 
+    protected function createThreadIndex() {
+        $t = time();
+        $ft = ($t * 10000000) + 116444736000000000;
+
+        // convert to hex and 0-pad to 8 bytes
+        $ft_hex = base_convert($ft, 10, 16);
+        $ft_hex = str_pad($ft_hex, 16, 0, STR_PAD_LEFT);
+
+        // this is what determines the threading, so should be unique per thread
+        $guid = md5(openssl_random_pseudo_bytes(256));
+
+        // combine first 6 bytes of timestamp with hashed guid, convert to bin, then encode
+        $thread_ascii = substr($ft_hex, 0, 12) . $guid;
+        $thread_bin = hex2bin($thread_ascii);
+        $thread_enc = base64_encode($thread_bin);
+
+        return $thread_enc;
+    }
+
     protected function applyCustomizations()
     {
-        // Generate Thread-Index
-        // 22 bytes
-        // - first 3 are similar to random seed (?)
-        // - next 19 bytes are random (?)
-        $seed = sprintf('%08X', mt_rand(0, 1024 * 1024 * 1024 * 1024 - 1));
+        $threadIndex = $this->createThreadIndex();
 
-        $threadIndex = pack('H*', substr($seed, 0, 6)) . openssl_random_pseudo_bytes(19);
-
-        $this->addCustomHeader('Thread-Index', $threadIndex);
+        $seed = strtoupper(bin2hex(substr(base64_decode($threadIndex), 0, 3)));
 
         // Generate Boundary based on Thread-Index
         // ----=_NextPart_000_02A1_01D30C9E.FBA46F20
-
-        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', time() % 1024 * 1024 * 1024 * 1024);
+        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', @array_pop(unpack('V', openssl_random_pseudo_bytes(4))));
 
         $this->message->setBoundary($boundary);
     }
