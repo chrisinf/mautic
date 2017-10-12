@@ -14,7 +14,10 @@ return [
         'events' => [
             'global_email_listener' => [
                 'class' => 'Mautic\CustomBundle\EventListener\GlobalEmailListener',
-                'arguments' => '@logger',
+		'arguments' => [
+                    '@logger',
+                    'mautic.helper.core_parameters'
+		],
                 'tags' => [
                     'swiftmailer.default.plugin'
                 ]

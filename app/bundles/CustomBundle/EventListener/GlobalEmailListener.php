@@ -2,6 +2,7 @@
 namespace Mautic\CustomBundle\EventListener;
 
 use Doctrine\ORM\EntityManager;
+use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CustomBundle\Model\EmailLogModel;
 use Psr\Log\LoggerInterface;
 use Swift_Events_SendEvent;
@@ -11,11 +12,17 @@ use Swift_Events_TransportChangeListener;
 
 class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_TransportChangeListener
 {
+    /*
+     * @var LoggerInterface
+     */
     protected $logger;
 
-    public function __construct(LoggerInterface $logger)
+    private $localDomain;
+
+    public function __construct(LoggerInterface $logger, CoreParametersHelper $coreParametersHelper)
     {
         $this->logger = $logger;
+        $this->localDomain = $coreParametersHelper->getParameter("mailer_helo_hostname");
     }
 
     /**
@@ -25,26 +32,6 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
      */
     public function beforeSendPerformed(Swift_Events_SendEvent $evt)
     {
-        // check for limits
-/*
-        $transport = $evt->getTransport();
-        $message = $evt->getMessage();
-
-        if ($transport instanceof \Swift_Transport_EsmtpTransport) {
-            $clientLocalDomain = preg_replace('/[\/=+]/', '', base64_encode(sha1(key($message->getFrom()))));
-
-            $localDomain = "LT";
-
-            if (strlen($clientLocalDomain) > 6) {
-                $localDomain = "DESKTOP-" . substr(strtoupper($clientLocalDomain));
-            }
-
-            $transport->setLocalDomain($localDomain, 0, 7);
-
-        } else {
-            $this->logger->info("transport is instance of " . get_class($transport));
-        }
-*/
     }
 
     /**
@@ -75,20 +62,9 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
     {
         $transport = $evt->getTransport();
 
-        if ($transport instanceof \Swift_Transport_EsmtpTransport) {
-            // todo make this configurable
-            $clientLocalDomain = 'TRGPHW';
-
-            $localDomain = "LT";
-
-            if (strlen($clientLocalDomain) > 6) {
-                $localDomain = "DESKTOP-" . substr(strtoupper($clientLocalDomain));
-            }
-
-            $transport->setLocalDomain($localDomain, 0, 7);
-
-        } else {
-            $this->logger->info("skipped transport is instance of " . get_class($transport));
+        if ($transport instanceof \Swift_Transport_EsmtpTransport  && !empty($this->localDomain)) {
+            $transport->setLocalDomain($this->localDomain);
+            $this->logger->info("set LocalDomain to custom value", [ 'localDomain' => $this->localDomain ]);
         }
     }
 
