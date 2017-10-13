@@ -273,40 +273,6 @@ class MailHelper
         }
 
         $this->message = $this->getMessageInstance();
-
-        $this->applyCustomizations();
-    }
-
-    protected function createThreadIndex() {
-        $t = time();
-        $ft = ($t * 10000000) + 116444736000000000;
-
-        // convert to hex and 0-pad to 8 bytes
-        $ft_hex = base_convert($ft, 10, 16);
-        $ft_hex = str_pad($ft_hex, 16, 0, STR_PAD_LEFT);
-
-        // this is what determines the threading, so should be unique per thread
-        $guid = md5(openssl_random_pseudo_bytes(256));
-
-        // combine first 6 bytes of timestamp with hashed guid, convert to bin, then encode
-        $thread_ascii = substr($ft_hex, 0, 12) . $guid;
-        $thread_bin = hex2bin($thread_ascii);
-        $thread_enc = base64_encode($thread_bin);
-
-        return $thread_enc;
-    }
-
-    protected function applyCustomizations()
-    {
-        $threadIndex = $this->createThreadIndex();
-
-        $seed = strtoupper(bin2hex(substr(base64_decode($threadIndex), 0, 3)));
-
-        // Generate Boundary based on Thread-Index
-        // ----=_NextPart_000_02A1_01D30C9E.FBA46F20
-        $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', @array_pop(unpack('V', openssl_random_pseudo_bytes(4))));
-
-        $this->message->setBoundary($boundary);
     }
 
     /**
@@ -319,8 +285,6 @@ class MailHelper
     public function getMailer($cleanSlate = true)
     {
         $this->reset($cleanSlate);
-        $this->applyCustomizations();
-
         return $this;
     }
 
@@ -425,10 +389,10 @@ class MailHelper
 				$from = $this->message->getFrom();
 				if (empty($from)) $from = $this->from;
 
-	            $tokens['{fromemail}'] = array_pop(array_keys($from));
-				$tokens['{fromname}'] = array_pop(array_values($from));
-				$tokens['{fromfirstname}'] = array_shift(explode(' ', $tokens['{fromname}']));
-				$tokens['{fromlastname}'] = array_pop(explode(' ', $tokens['{fromname}']));
+	            $tokens['{fromemail}'] = @array_pop(array_keys($from));
+				$tokens['{fromname}'] = @array_pop(array_values($from));
+				$tokens['{fromfirstname}'] = @array_shift(explode(' ', $tokens['{fromname}']));
+				$tokens['{fromlastname}'] = @array_pop(explode(' ', $tokens['{fromname}']));
 
                 // Set metadata if applicable
                 if (method_exists($this->message, 'addMetadata')) {
