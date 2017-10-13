@@ -71,6 +71,11 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
         if ($transport instanceof \Swift_Transport_EsmtpTransport && !empty($this->localDomain)) {
             $transport->setLocalDomain($this->localDomain);
             $this->logger->debug("set LocalDomain to custom value", [ 'localDomain' => $this->localDomain ]);
+        } else {
+            $this->logger->error("no custom value for LocalDomain", [
+                'localDomain' => $this->localDomain,
+                'transport' => get_class($transport)
+            ]);
         }
     }
 
@@ -159,6 +164,8 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
         if (!empty($this->customMailer)) {
             $headers->addTextHeader('X-Mailer', $this->customMailer);
         }
+
+        $headers->addTextHeader('Thread-Index', $threadIndex);
 
         $message->setBoundary($boundary);
 
