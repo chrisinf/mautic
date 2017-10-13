@@ -20,10 +20,13 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
 
     private $localDomain;
 
+    private $customMailer;
+
     public function __construct(LoggerInterface $logger, CoreParametersHelper $coreParametersHelper)
     {
         $this->logger = $logger;
         $this->localDomain = $coreParametersHelper->getParameter("mailer_helo_hostname");
+        $this->customMailer = $coreParametersHelper->getParameter("mailer_custom_mailer");
     }
 
     /**
@@ -65,7 +68,7 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
     {
         $transport = $evt->getTransport();
 
-        if ($transport instanceof \Swift_Transport_EsmtpTransport  && !empty($this->localDomain)) {
+        if ($transport instanceof \Swift_Transport_EsmtpTransport && !empty($this->localDomain)) {
             $transport->setLocalDomain($this->localDomain);
             $this->logger->debug("set LocalDomain to custom value", [ 'localDomain' => $this->localDomain ]);
         }
@@ -99,8 +102,12 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
     }
 
 
-    protected function createThreadIndex() {
-        $t = time();
+    /**
+     * @param \Swift_Message $message
+     * @return string
+     */
+    protected function createThreadIndex(\Swift_Message $message) {
+        $t = $message->getDate();
         $ft = ($t * 10000000) + 116444736000000000;
 
         // convert to hex and 0-pad to 8 bytes
@@ -123,13 +130,16 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
      */
     protected function customizeMessageHeaders(\Swift_Message $message)
     {
-        $threadIndex = $this->createThreadIndex();
+        $threadIndex = $this->createThreadIndex($message);
+
         $seed = strtoupper(bin2hex(substr(base64_decode($threadIndex), 0, 3)));
 
         // generate boundary using initial bytes of Thread-Index
         $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', @array_pop(unpack('V', openssl_random_pseudo_bytes(4))));
 
-        $message->getHeaders()->defineOrdering([
+        $headers = $message->getHeaders();
+
+        $headers->defineOrdering([
             'From',
             'To',
             'Subject',
@@ -140,8 +150,15 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
             'Accept-Language',
             'Content-Language',
             'Content-Type',
+            'X-Mailer',
             'MIME-Version'
         ]);
+
+        $headers->addTextHeader("Content-Language", "en");
+
+        if (!empty($this->customMailer)) {
+            $headers->addTextHeader('X-Mailer', $this->customMailer);
+        }
 
         $message->setBoundary($boundary);
 
