@@ -67,16 +67,7 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
     public function beforeTransportStarted(Swift_Events_TransportChangeEvent $evt)
     {
         $transport = $evt->getTransport();
-
-        if ($transport instanceof \Swift_Transport_EsmtpTransport && !empty($this->localDomain)) {
-            $transport->setLocalDomain($this->localDomain);
-            $this->logger->debug("set LocalDomain to custom value", [ 'localDomain' => $this->localDomain ]);
-        } else {
-            $this->logger->error("no custom value for LocalDomain", [
-                'localDomain' => $this->localDomain,
-                'transport' => get_class($transport)
-            ]);
-        }
+        $this->customizeLocalDomain($transport);
     }
 
     /**
@@ -136,13 +127,29 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
     protected function customizeMessageHeaders(\Swift_Message $message)
     {
         $threadIndex = $this->createThreadIndex($message);
-
         $seed = strtoupper(bin2hex(substr(base64_decode($threadIndex), 0, 3)));
 
         // generate boundary using initial bytes of Thread-Index
         $boundary = '----=_NextPart_' . '000' . '_' . '02A1' . '_' . $seed . '.' . sprintf('%08X', @array_pop(unpack('V', openssl_random_pseudo_bytes(4))));
 
         $headers = $message->getHeaders();
+
+        $customHeaders = [
+            'Content-Language' => 'en',
+            'Thread-Index' => $threadIndex,
+            'X-Mailer' => empty($this->customMailer) ? null : $this->customMailer
+        ];
+
+        foreach ($customHeaders as $name => $value) {
+            if (!$headers->get($name)) {
+                $headers->addTextHeader($name, $value);
+
+                if ($name == 'Thread-Index') {
+                    // also set boundary with Thread-Index (common inputs)
+                    $message->setBoundary($boundary);
+                }
+            }
+        }
 
         $headers->defineOrdering([
             'From',
@@ -159,19 +166,15 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
             'MIME-Version'
         ]);
 
-        $headers->addTextHeader("Content-Language", "en");
-
-        if (!empty($this->customMailer)) {
-            $headers->addTextHeader('X-Mailer', $this->customMailer);
-        }
-
-        $headers->addTextHeader('Thread-Index', $threadIndex);
-
-        $message->setBoundary($boundary);
-
         $message->setId(implode('@', [
             strtoupper(md5(getmypid().'.'.time().'.'.uniqid(mt_rand(), true))),
             $this->localDomain
         ]));
+    }
+
+    protected function customizeLocalDomain(\Swift_Transport $transport) {
+        if (method_exists($transport, 'setLocalDomain') && !empty($this->localDomain)) {
+            $transport->setLocalDomain($this->localDomain);
+        }
     }
 }
