@@ -80,11 +80,6 @@ EOT
         if (!$skipClear) {
             //Swift mailer's send command does not handle failed messages well rather it will retry sending forever
             //so let's first handle emails stuck in the queue and remove them if necessary
-            $transport = $this->getContainer()->get('swiftmailer.transport.real');
-            if (!$transport->isStarted()) {
-                $transport->start();
-            }
-
             $spoolPath = $container->getParameter('mautic.mailer_spool_path');
             if (file_exists($spoolPath)) {
                 $finder = Finder::create()->in($spoolPath)->name('*.{finalretry,sending,tryagain}');
@@ -113,6 +108,12 @@ EOT
                         }
 
                         try {
+                            $transport = $this->getContainer()->get('swiftmailer.transport.real');
+
+                            if (!$transport->isStarted()) {
+                                $transport->start();
+                            }
+
                             $transport->send($message);
                         } catch (\Swift_TransportException $e) {
                             if ($dispatcher->hasListeners(EmailEvents::EMAIL_FAILED)) {
@@ -141,6 +142,7 @@ EOT
         }
 
         $command     = $this->getApplication()->find('swiftmailer:spool:send');
+
         $commandArgs = [
             'command' => 'swiftmailer:spool:send',
             '--env'   => $env,
