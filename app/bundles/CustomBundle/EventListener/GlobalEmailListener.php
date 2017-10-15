@@ -166,10 +166,12 @@ class GlobalEmailListener implements Swift_Events_SendListener, Swift_Events_Tra
             'MIME-Version'
         ]);
 
-        $message->setId(implode('@', [
-            strtoupper(md5(getmypid().'.'.time().'.'.uniqid(mt_rand(), true))),
-            $this->localDomain
-        ]));
+        if (!empty($this->localDomain)) {
+            $message->setId(implode('@', [
+                strtoupper(md5(getmypid() . '.' . time() . '.' . uniqid(mt_rand(), true))),
+                $this->localDomain
+            ]));
+        }
     }
 
     protected function customizeLocalDomain(\Swift_Transport $transport) {
