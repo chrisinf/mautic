@@ -14,10 +14,10 @@ return [
         'events' => [
             'global_email_listener' => [
                 'class' => 'Mautic\CustomBundle\EventListener\GlobalEmailListener',
-		'arguments' => [
+                'arguments' => [
                     '@logger',
                     'mautic.helper.core_parameters'
-		],
+                ],
                 'tags' => [
                     'swiftmailer.default.plugin'
                 ]
@@ -25,7 +25,7 @@ return [
         ],
         'other' => [
             'mautic.helper.update' => [
-                'class'     => 'Mautic\CustomBundle\Helper\CustomUpdateHelper',
+                'class' => 'Mautic\CustomBundle\Helper\CustomUpdateHelper',
                 'arguments' => 'mautic.factory',
             ],
         ],
@@ -38,7 +38,8 @@ return [
     ],
 
     'parameters' => [
-        'update_stability'          => 'stable',
-        'update_checkupdates_url'   => 'https://updates.mautic.org/index.php?option=com_mauticdownload&task=checkUpdates',
+        'update_stability' => 'stable',
+        'update_checkupdates_url' => 'https://updates.mautic.org/index.php?option=com_mauticdownload&task=checkUpdates',
     ],
 ];
+
