@@ -662,6 +662,34 @@ class PageModel extends FormModel
         $this->em->flush($device);
         $hit->setDeviceStat($device);
 
+        /* Below additions for CLICKS / VIEWS optimization (Do not save entries IF page_hit < 1 minute) */
+        $datetime_hit = $hit->getDateHit()->format('Y-m-d H:i:s');
+
+        $source_id = $clickthrough['source'][1];
+        $lead_id   = $lead->getId();
+
+        //query to get campaign sent datetime
+        $q = $this->em->getConnection()->createQueryBuilder();
+        $q->select('e.date_sent')
+            ->from(MAUTIC_TABLE_PREFIX.'email_stats', 'e')
+            ->where('source_id = :source_id')
+            ->andWhere('lead_id = :lead_id')
+            ->setParameter('source_id', $source_id)
+            ->setParameter('lead_id', $lead_id)
+            ->setMaxResults(1);
+
+        $result_date_sent = $q->execute()->fetch();
+        $date_sent = $result_date_sent['date_sent'];
+
+        $minutes = round(abs(strtotime($datetime_hit) - strtotime($date_sent)) / 60); //get time difference between campaign sent and page hit in minutes
+
+        if($minutes<=1)
+        {
+            //Time difference is less or equals to 1 minutes so ignore/do not save in DB
+            return;
+        }
+        /* Above additions for CLICKS / VIEWS optimization */
+
         // Wrap in a try/catch to prevent deadlock errors on busy servers
         try {
             $this->em->persist($hit);
